@@ -6,7 +6,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "BTC 2 Iphone",
-  description: "Convert price of BTC to Iphone",
+  description:
+    "How many BTC to buy an Iphone?, Iphone price follow Bitcoin, BTC2IPhone, BTC 2 Iphone, BTC to Iphone",
 };
 
 export default function RootLayout({
