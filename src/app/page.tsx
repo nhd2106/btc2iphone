@@ -34,11 +34,8 @@ export default function Home() {
               <div className="bg-slate-50 rounded-full h-2 w-2"></div>
               <div className="ml-4 font-bold">{event.year}</div>
             </div>
-            <div
-              className="max-w-xs rounded-lg shadow-lg p-4"
-              style={{ backgroundColor: "rgba(255, 255, 255, 0.8)" }}
-            >
-              <p className="text-gray-700">{event.description}</p>
+            <div className="max-w-xs  shadow-lg p-4 bg-white bg-opacity-30 backdrop-blur-lg rounded-lg drop-shadow-lg">
+              <p className="text-white">{event.description}</p>
             </div>
           </div>
         ))}
