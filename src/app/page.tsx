@@ -1,19 +1,67 @@
-export default function Home() {
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Bitcoin to iPhone Calculator | btc2iphone.com",
+  description:
+    "Calculate how much bitcoin you need to buy an iPhone. Bitcoin to iPhone exchange rate calculator.",
+  keywords: "bitcoin, iPhone, calculator, exchange rate",
+
+  openGraph: {
+    title: "Bitcoin to iPhone Calculator | btc2iphone.com",
+    description:
+      "Calculate how much bitcoin you need to buy an iPhone. Bitcoin to iPhone exchange rate calculator.",
+    url: "https://btc2iphone.com",
+
+    type: "website",
+    images: [
+      {
+        url: "https://btc2iphone.com/iphone.png",
+        width: 1200,
+        height: 630,
+        alt: "Bitcoin to iPhone Calculator | btc2iphone.com",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bitcoin to iPhone Calculator | btc2iphone.com",
+    description:
+      "Calculate how much bitcoin you need to buy an iPhone. Bitcoin to iPhone exchange rate calculator.",
+  },
+};
+
+async function getBitcoinPrice() {
+  const res = await fetch("https://api.coindesk.com/v1/bpi/currentprice.json");
+  // get Iphone price from https://www.apple.com/shop/buy-iphone/iphone-15
+
+  const data = await res.json();
+  return data.bpi.USD.rate_float;
+}
+
+export default async function Home() {
+  const price = (await getBitcoinPrice()) || 1;
+  const latestIphoneprice = 899;
+  // round to 2 decimal places
+  const price2 = Math.round((latestIphoneprice / price) * 100) / 100;
   const events = [
-    { year: 2011, description: "iPhone 4s - 162 BTC" },
-    { year: 2012, description: "iPhone 5- 53 BTC" },
-    { year: 2013, description: "iPhone 5s - 5 BTC" },
-    { year: 2014, description: "iPhone 6 - 1.7 BTC" },
-    { year: 2015, description: "iPhone 6s - 2.8 BTC" },
-    { year: 2016, description: "iPhone 7 - 1.1 BTC" },
-    { year: 2017, description: "iPhone 8 - 0.19 BTC" },
-    { year: 2017, description: "iPhone X - 0.14 BTC" },
-    { year: 2018, description: "iPhone XS - 0.15 BTC" },
-    { year: 2019, description: "iPhone 11 - 0.068 BTC" },
-    { year: 2020, description: "iPhone 12 - 0.051 BTC" },
-    { year: 2021, description: "iPhone 13 - 0.018 BTC" },
-    { year: 2022, description: "iPhone 14 - 0.042 BTC" },
-    { year: 2023, description: "iPhone 15 - 0.031 BTC" },
+    { year: 2011, description: "162 BTC ", model: "iPhone 4s " },
+    { year: 2012, description: "53 BTC", model: "Iphone 5" },
+    { year: 2013, description: "5 BTC", model: "iPhone 5s " },
+    { year: 2014, description: "1.7 BTC", model: "iPhone 6" },
+    { year: 2015, description: "2.8 BTC", model: "iPhone 6s" },
+    { year: 2016, description: "1.1 BTC", model: "iPhone 7 " },
+    { year: 2017, description: "0.19 BTC", model: "iPhone 8 " },
+    { year: 2017, description: "0.14 BTC", model: "iPhone X " },
+    { year: 2018, description: "0.15 BTC", model: "iPhone XS" },
+    { year: 2019, description: "0.068 BTC", model: "iPhone 11 " },
+    { year: 2020, description: "0.051 BTC", model: "iPhone 12" },
+    { year: 2021, description: "0.018 BTC", model: " iPhone 13" },
+    { year: 2022, description: "0.042 BTC", model: "iPhone 14 " },
+    {
+      year: 2023,
+      description: `${price2} BTC`,
+      model: "iPhone 15 ",
+    },
   ];
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -28,17 +76,27 @@ export default function Home() {
       <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left"></div>
       <div className="flex flex-col items-center justify-center">
         <div className="border-r-2 border-gray-500 h-full"></div>
-        {events.map((event) => (
-          <div key={event.year} className="flex flex-col items-center">
-            <div className="flex items-center mb-3">
-              <div className="bg-slate-50 rounded-full h-2 w-2"></div>
-              <div className="ml-4 font-bold">{event.year}</div>
-            </div>
-            <div className="max-w-xs  shadow-lg p-4 bg-white bg-opacity-30 backdrop-blur-lg rounded-lg drop-shadow-lg">
-              <p className="text-white">{event.description}</p>
-            </div>
-          </div>
-        ))}
+        <ul className="timeline">
+          {events.map((event, index) => (
+            <li key={event.year}>
+              <div
+                key={event.year}
+                className={index % 2 ? "direction-r" : "direction-l"}
+              >
+                <div className="flag-wrapper">
+                  <span className="flag text-black">{event.model}</span>
+                  <span className="time-wrapper">
+                    <span className="time text-xs">{event.year}</span>
+                  </span>
+                </div>
+
+                <div className="desc">
+                  <span className="">{event.description}</span>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </main>
   );
