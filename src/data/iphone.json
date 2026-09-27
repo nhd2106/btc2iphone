@@ -1,0 +1,101 @@
+{
+  "current": {
+    "model": "iPhone 17",
+    "priceUsd": 799,
+    "launchBtc": 0.0069,
+    "since": "2025-09-19",
+    "checkedAt": "2026-09-27"
+  },
+  "history": [
+    {
+      "year": 2011,
+      "model": "iPhone 4S",
+      "btc": 162,
+      "joke": "Paid 162 BTC for a phone that can’t run today’s apps."
+    },
+    {
+      "year": 2012,
+      "model": "iPhone 5",
+      "btc": 53,
+      "joke": "The Lightning port arrived. So did the regret."
+    },
+    {
+      "year": 2013,
+      "model": "iPhone 5s",
+      "btc": 5,
+      "joke": "Touch ID: your fingerprint, on a 5 BTC mistake."
+    },
+    {
+      "year": 2014,
+      "model": "iPhone 6",
+      "btc": 1.7,
+      "joke": "Bigger screen. Bigger regret."
+    },
+    {
+      "year": 2015,
+      "model": "iPhone 6s",
+      "btc": 2.8,
+      "joke": "3D Touch. Press harder on the pain."
+    },
+    {
+      "year": 2016,
+      "model": "iPhone 7",
+      "btc": 1.1,
+      "joke": "They removed the headphone jack. You removed 1.1 BTC."
+    },
+    {
+      "year": 2017,
+      "model": "iPhone 8",
+      "btc": 0.19,
+      "joke": "Wireless charging. Wireless savings."
+    },
+    {
+      "year": 2017,
+      "model": "iPhone X",
+      "btc": 0.14,
+      "joke": "Face ID recognised you. As a seller."
+    },
+    {
+      "year": 2018,
+      "model": "iPhone XS",
+      "btc": 0.15,
+      "joke": "Crypto winter, phone summer."
+    },
+    {
+      "year": 2019,
+      "model": "iPhone 11",
+      "btc": 0.068,
+      "joke": "Night mode: for staring at charts at 3am."
+    },
+    {
+      "year": 2020,
+      "model": "iPhone 12",
+      "btc": 0.051,
+      "joke": "5G arrived. So did the bull run."
+    },
+    {
+      "year": 2021,
+      "model": "iPhone 13",
+      "btc": 0.018,
+      "joke": "Cheapest iPhone of the bull run. Nobody noticed."
+    },
+    {
+      "year": 2022,
+      "model": "iPhone 14",
+      "btc": 0.042,
+      "joke": "Emergency SOS via satellite. No SOS for your bags."
+    },
+    {
+      "year": 2023,
+      "model": "iPhone 15",
+      "btc": 0.031,
+      "joke": "USB-C at last. Your old cables and old coins: gone."
+    },
+    {
+      "year": 2024,
+      "model": "iPhone 16",
+      "btc": 0.0136,
+      "joke": "A camera button. For photographing your regret."
+    }
+  ]
+}
