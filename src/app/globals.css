@@ -76,6 +76,10 @@ a {
 .btn--orange {
   background: var(--orange);
 }
+.btn--blue {
+  background: var(--blue);
+  color: #fff;
+}
 
 .btn-icon {
   width: 52px;
@@ -267,6 +271,7 @@ a {
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
+  isolation: isolate;
   min-height: 700px;
   padding: 72px var(--gutter) 40px;
   display: grid;
@@ -286,6 +291,52 @@ a {
   line-height: 1.05;
   font-weight: 800;
   letter-spacing: -0.04em;
+}
+.hero__h1 .word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.hero__h1 .ch {
+  display: inline-block;
+  will-change: transform;
+}
+.hl {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.scribble {
+  position: absolute;
+  left: -2%;
+  bottom: -0.16em;
+  width: 104%;
+  height: 0.34em;
+  overflow: visible;
+  pointer-events: none;
+}
+.scribble path {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 7;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.odo {
+  display: inline-flex;
+  line-height: 1;
+}
+.odo__reel {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+}
+.odo__strip {
+  display: flex;
+  flex-direction: column;
+  transition: transform 1.2s cubic-bezier(0.2, 1.35, 0.35, 1);
+}
+.odo__strip span {
+  height: 1em;
 }
 .hero__mask {
   display: inline-block;
@@ -353,34 +404,67 @@ a {
 
 .sticker {
   position: absolute;
+  z-index: 4;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.sticker > span {
+  display: block;
   padding: 12px 18px;
   border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 4px 4px 0 var(--ink);
   font-weight: 800;
-  pointer-events: none;
-  z-index: 3;
+  white-space: nowrap;
 }
-.sticker--blue {
-  top: 30px;
-  right: 0;
+.sticker--0 {
+  top: 110px;
+  right: 4%;
+}
+.sticker--1 {
+  bottom: 120px;
+  right: 33%;
+}
+.sticker--2 {
+  top: 46%;
+  right: 3%;
+}
+.sticker--3 {
+  bottom: 56px;
+  right: 9%;
+}
+.sticker--red {
+  top: 64px;
+  right: 30%;
+}
+.sticker--blue > span {
   background: var(--blue);
   color: #fff;
-  border-radius: 12px;
   font-size: 17px;
   letter-spacing: 0.04em;
 }
-.sticker--orange {
-  bottom: 110px;
-  left: 0;
+.sticker--orange > span {
   background: var(--orange);
   border-radius: 999px;
   font-size: 20px;
 }
-.sticker--red {
-  bottom: 30px;
-  right: 10px;
+.sticker--cream > span {
+  background: var(--cream);
+  font-size: 30px;
+  letter-spacing: 0.08em;
+  border-radius: 50%;
+  padding: 22px 16px;
+}
+.sticker--ink > span {
+  background: var(--ink);
+  color: var(--orange);
+  font-family: var(--font-mono), monospace;
+  font-size: 16px;
+}
+.sticker--red > span {
   background: var(--down);
   color: #fff;
-  border-radius: 10px;
   font-size: 16px;
   animation: popin 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -419,8 +503,10 @@ a {
 
 /* ---------- Calculator ---------- */
 .calc {
+  position: relative;
+  z-index: 2;
   margin-top: -8px;
-  padding: 96px var(--gutter) 72px;
+  padding: 96px var(--gutter) 300px;
   background: var(--ink);
   color: var(--cream);
   display: grid;
@@ -653,6 +739,8 @@ input[type="range"]:focus-visible {
 
 /* ---------- Hall of Regret ---------- */
 .regret {
+  position: relative;
+  overflow: hidden;
   padding: 96px var(--gutter) 96px;
   display: flex;
   flex-direction: column;
@@ -810,6 +898,7 @@ input[type="range"]:focus-visible {
 
 /* ---------- Footer ---------- */
 .footer {
+  position: relative;
   padding: 64px var(--gutter);
   background: var(--ink);
   color: var(--cream);
@@ -848,6 +937,285 @@ input[type="range"]:focus-visible {
 }
 .footer__meta .ticker__dot.is-live {
   background: #3ddc84;
+}
+
+/* ---------- Brag + physics pit ---------- */
+.calc .chunky {
+  border-color: var(--cream);
+  box-shadow: 6px 6px 0 var(--cream);
+}
+.calc .chunky:hover {
+  box-shadow: 8px 8px 0 var(--cream);
+}
+.calc .chunky:active {
+  box-shadow: 2px 2px 0 var(--cream);
+}
+.brag {
+  align-self: flex-start;
+  gap: 10px;
+  margin-top: 8px;
+}
+.pit {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.calc__controls,
+.calc__result {
+  position: relative;
+  z-index: 2;
+}
+.pit-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  height: 56px;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: repeating-linear-gradient(-45deg, var(--orange) 0 18px, var(--ink) 18px 36px);
+  border-top: 3px solid var(--ink);
+}
+.pit-floor__label,
+.pit-floor__actions {
+  padding: 6px 14px;
+  background: var(--ink);
+  border-radius: 999px;
+  color: var(--cream);
+  font-size: 14px;
+  font-weight: 700;
+}
+.pit-floor__actions {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+}
+.pit-floor__actions .chip {
+  height: 36px;
+  font-size: 14px;
+}
+
+/* ---------- Torn paper edges ---------- */
+.torn {
+  position: absolute;
+  left: 0;
+  top: -27px;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 28px;
+  pointer-events: none;
+}
+.torn--flip {
+  top: auto;
+  bottom: -27px;
+  transform: scaleY(-1);
+}
+
+/* ---------- Pinned Hall of Regret ---------- */
+.regret > *:not(.regret__year) {
+  position: relative;
+  z-index: 1;
+}
+.regret__year {
+  position: absolute;
+  right: -1vw;
+  top: 50%;
+  z-index: 0;
+  transform: translateY(-50%);
+  font-size: min(34vw, 520px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: transparent;
+  -webkit-text-stroke: 3px #e4dccb;
+  pointer-events: none;
+  user-select: none;
+}
+.regret.is-pinned {
+  height: calc(100vh - 96px);
+  box-sizing: border-box;
+  padding-top: 28px;
+  padding-bottom: 28px;
+  gap: 16px;
+  justify-content: center;
+}
+.regret.is-pinned .h2--xl {
+  font-size: 54px;
+}
+.regret.is-pinned .regret__lede {
+  margin-top: 6px;
+}
+.regret.is-pinned .regret__scroll {
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+}
+.regret.is-pinned .chart {
+  min-width: 0;
+  width: min(100%, calc((100vh - 560px) * 2.5));
+  margin: 0 auto 48px;
+}
+.regret.is-pinned .rcard {
+  padding: 18px 22px;
+}
+.regret.is-pinned .rcard__big {
+  font-size: 40px;
+}
+.pt--future {
+  opacity: 0.25;
+}
+.regret__progress {
+  height: 12px;
+  border: 3px solid var(--ink);
+  border-radius: 99px;
+  background: #fff;
+  overflow: hidden;
+}
+.regret__progress-bar {
+  height: 100%;
+  background: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* ---------- Footer xylophone ---------- */
+.xylo {
+  display: inline-block;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.xylo:hover {
+  color: var(--cream);
+}
+
+/* ---------- Cursor ---------- */
+html.has-cursor,
+html.has-cursor * {
+  cursor: none !important;
+}
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 3000;
+  pointer-events: none;
+}
+.cursor-dot {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+}
+.cursor-dot svg {
+  display: block;
+}
+.cursor-ring {
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cursor-ring__label {
+  opacity: 0;
+  font-size: 7.5px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+  transform: translateY(-9px);
+}
+
+/* ---------- Loader ---------- */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+}
+.loader__top,
+.loader__bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50.5%;
+  background: var(--ink);
+}
+.loader__top {
+  top: 0;
+  border-bottom: 3px solid var(--orange);
+}
+.loader__bottom {
+  bottom: 0;
+}
+.loader__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--cream);
+  perspective: 600px;
+}
+.loader__coin {
+  transform-style: preserve-3d;
+}
+.loader__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+.loader__hash {
+  margin: 0;
+  font-size: 15px;
+  color: var(--on-ink-muted);
+}
+.loader__bar {
+  width: min(320px, 70vw);
+  height: 14px;
+  border: 3px solid var(--cream);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.loader__bar i {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.loader__pct {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--orange);
+}
+
+/* ---------- Film grain ---------- */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.8s steps(4) infinite;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-5%, 3%); }
+  50% { transform: translate(4%, -6%); }
+  75% { transform: translate(-3%, 5%); }
+  100% { transform: translate(0, 0); }
 }
 
 /* ---------- Coin rain ---------- */
@@ -927,14 +1295,38 @@ input[type="range"]:focus-visible {
     font-size: 19px;
     padding: 0 24px;
   }
-  .sticker--blue {
-    font-size: 12px;
-    padding: 8px 12px;
+  .sticker > span {
+    font-size: 12px !important;
+    padding: 7px 10px !important;
   }
-  .sticker--orange {
-    font-size: 15px;
-    padding: 8px 12px;
-    bottom: 60px;
+  .sticker--0 {
+    top: auto;
+    bottom: 400px;
+    right: 8px;
+  }
+  .sticker--1 {
+    bottom: 70px;
+    right: auto;
+    left: 12px;
+  }
+  .sticker--2 {
+    top: auto;
+    bottom: 220px;
+    right: 8px;
+  }
+  .sticker--3 {
+    bottom: 24px;
+    right: 12px;
+  }
+  .calc {
+    padding-bottom: 240px;
+  }
+  .pit-floor__label {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .pit-floor__count {
+    display: none;
   }
   .marquee {
     height: 60px;
@@ -983,6 +1375,12 @@ input[type="range"]:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .grain {
+    animation: none;
+  }
+  .odo__strip {
+    transition: none;
   }
   .wobble,
   .wobble2,

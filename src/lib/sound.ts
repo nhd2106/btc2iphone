@@ -57,6 +57,7 @@ function tone(
 }
 
 let lastTick = 0;
+let lastClack = 0;
 
 export const sfx = {
   pop: () => tone(520, 0.09, "sine", 0, 0.16, 980),
@@ -84,6 +85,26 @@ export const sfx = {
       const f = 500 + Math.random() * 900;
       tone(f, 0.06, "sine", Math.random() * span, 0.07, f * 1.8);
     }
+  },
+  /** Xylophone note `i` of a C-major pentatonic scale. */
+  note: (i: number) => {
+    const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
+    const f = scale[((i % scale.length) + scale.length) % scale.length];
+    tone(f, 0.5, "sine", 0, 0.12);
+    tone(f * 4, 0.12, "sine", 0, 0.03);
+  },
+  /** Plastic clack for phones hitting each other; `force` 0..1. */
+  clack: (force: number) => {
+    const now = performance.now();
+    if (now - lastClack < 35) return;
+    lastClack = now;
+    tone(900 + Math.random() * 1400, 0.035, "square", 0, 0.015 + force * 0.05);
+  },
+  /** Soft tick used while scrubbing through years. */
+  softTick: (i: number) => tone(700 + i * 40, 0.04, "triangle", 0, 0.05),
+  camera: () => {
+    tone(2400, 0.03, "square", 0, 0.06);
+    tone(1200, 0.08, "square", 0.05, 0.05, 600);
   },
   boing: () => tone(150, 0.35, "triangle", 0, 0.14, 60),
   zap: () => tone(1800, 0.4, "sawtooth", 0, 0.06, 90),
