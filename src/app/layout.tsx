@@ -1,23 +1,20 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["400", "600", "800"], variable: "--font-display" });
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "BTC 2 Iphone",
-  description:
-    "How many BTC to buy an Iphone?, Iphone price follow Bitcoin, BTC2IPhone, BTC 2 Iphone, BTC to Iphone",
+  title: "BTC 2 iPhone",
+  description: "How many BTC to buy an iPhone? iPhone price in bitcoin, live.",
+  themeColor: "#F7931A",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" className={`${display.variable} ${mono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

@@ -1,34 +1,40 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# btc2iphone
 
-## Getting Started
+How much bitcoin does an iPhone cost? A playful Next.js site with a live BTC
+price, a 3D phone, a stack calculator and the Hall of Regret (every iPhone
+priced in the bitcoin it cost at launch).
 
-First, run the development server:
+## Run it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## How prices stay fresh
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- **BTC price: real time.** The server renders the page with a spot price
+  (Coinbase, then CoinGecko; cached for 5 minutes). In the browser,
+  `src/lib/useBtcPrice.ts` streams the Coinbase WebSocket ticker and falls back
+  to polling every 30 s if the socket drops.
+- **iPhone price: weekly.** `src/data/iphone.json` holds the current model,
+  its price and the history. `.github/workflows/update-iphone-price.yml` runs
+  `scripts/update-iphone-price.mjs` every Monday. It scrapes apple.com for the
+  newest base iPhone and its starting price, and commits any change, which
+  redeploys the site. When a new model ships, the old one moves into the Hall
+  of Regret automatically. If Apple's page can't be parsed, nothing changes.
+  You can also run it by hand from the Actions tab or edit the JSON.
 
-## Learn More
+## What makes it move
 
-To learn more about Next.js, take a look at the following resources:
+| Where | Library |
+| --- | --- |
+| 3D phone with spinning coin, pointer tilt, tap to flip (`PhoneScene.tsx`) | three.js |
+| Headline intro, scroll reveals, marquee, chart line draw, rolling numbers, ticker flash | GSAP + ScrollTrigger |
+| Coin rain, phone icons popping into the calculator | anime.js |
+| Every sound effect (`src/lib/sound.ts`), synthesized with no audio files | Web Audio API |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+All motion respects `prefers-reduced-motion`, and sound can be muted from the
+nav (the choice is remembered). Tap the logo five times for a surprise.
