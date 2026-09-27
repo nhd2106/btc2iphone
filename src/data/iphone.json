@@ -1,11 +1,23 @@
 {
-  "current": {
-    "model": "iPhone 17",
-    "priceUsd": 799,
-    "launchBtc": 0.0069,
-    "since": "2025-09-19",
-    "checkedAt": "2026-09-27"
-  },
+  "checkedAt": "2026-09-27",
+  "current": [
+    {
+      "model": "iPhone 18 Pro",
+      "slug": "iphone-18-pro",
+      "form": "bar",
+      "priceUsd": 1199,
+      "since": "2026-09-18",
+      "launchBtc": null
+    },
+    {
+      "model": "iPhone Duo",
+      "slug": "iphone-duo",
+      "form": "foldable",
+      "priceUsd": 1999,
+      "since": "2026-09-09",
+      "launchBtc": null
+    }
+  ],
   "history": [
     {
       "year": 2011,
@@ -96,6 +108,12 @@
       "model": "iPhone 16",
       "btc": 0.0136,
       "joke": "A camera button. For photographing your regret."
+    },
+    {
+      "year": 2025,
+      "model": "iPhone 17",
+      "btc": 0.0069,
+      "joke": "Thinner bezels. Thinner excuses."
     }
   ]
 }
