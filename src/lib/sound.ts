@@ -78,6 +78,14 @@ export const sfx = {
     tone(180, 0.25, "sine", 0, 0.12, 900);
     tone(1200, 0.12, "triangle", 0.2, 0.06, 1600);
   },
+  /** A burst of `n` popcorn pops spread over `span` seconds. */
+  popcorn: (n: number, span = 0.9) => {
+    for (let i = 0; i < n; i++) {
+      const f = 500 + Math.random() * 900;
+      tone(f, 0.06, "sine", Math.random() * span, 0.07, f * 1.8);
+    }
+  },
+  boing: () => tone(150, 0.35, "triangle", 0, 0.14, 60),
   zap: () => tone(1800, 0.4, "sawtooth", 0, 0.06, 90),
   blip: (i: number) => tone(300 + i * 60, 0.12, "triangle", 0, 0.12, 420 + i * 70),
   /** Throttled tick for sliders; pitch follows `level` (0..1). */
