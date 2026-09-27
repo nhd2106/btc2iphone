@@ -8,16 +8,21 @@ export type HistoryPoint = {
   joke: string;
 };
 
+export type PhoneForm = "bar" | "foldable";
+
 export type CurrentIphone = {
   model: string;
+  /** apple.com page slug, used by the weekly price check. */
+  slug: string;
+  form: PhoneForm;
   priceUsd: number;
-  /** BTC per phone when this model was first seen by the weekly updater. */
-  launchBtc: number;
-  /** Date this model became the current one (YYYY-MM-DD). */
+  /** Date this model went on sale or was announced (YYYY-MM-DD). */
   since: string;
-  /** Date of the last successful weekly price check (YYYY-MM-DD). */
-  checkedAt: string;
+  /** BTC per phone, recorded by the weekly check when first seen. */
+  launchBtc: number | null;
 };
 
-export const currentIphone: CurrentIphone = data.current;
+export const currentIphones = data.current as CurrentIphone[];
 export const iphoneHistory: HistoryPoint[] = data.history;
+/** Date of the last weekly price check (YYYY-MM-DD). */
+export const checkedAt: string = data.checkedAt;

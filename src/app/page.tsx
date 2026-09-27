@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Site from "@/components/Site";
-import { currentIphone, iphoneHistory } from "@/data/iphone";
+import { checkedAt, currentIphones, iphoneHistory } from "@/data/iphone";
 
 const title = "Bitcoin to iPhone Calculator | btc2iphone.com";
 const description =
@@ -44,5 +44,5 @@ async function getInitialBtcPrice(): Promise<number | null> {
 
 export default async function Home() {
   const initialPrice = await getInitialBtcPrice();
-  return <Site initialPrice={initialPrice} iphone={currentIphone} history={iphoneHistory} />;
+  return <Site initialPrice={initialPrice} iphones={currentIphones} history={iphoneHistory} checkedAt={checkedAt} />;
 }

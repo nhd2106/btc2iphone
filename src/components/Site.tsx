@@ -9,6 +9,7 @@ import { fmtSats, fmtUsd } from "@/lib/format";
 import { loadSoundPreference, setSoundEnabled, sfx } from "@/lib/sound";
 import { useBtcPrice } from "@/lib/useBtcPrice";
 import Calculator from "./Calculator";
+import BtcLogo from "./BtcLogo";
 import CoinRain, { type CoinRainHandle } from "./CoinRain";
 import RegretChart from "./RegretChart";
 
@@ -21,15 +22,18 @@ const PhoneScene = dynamic(() => import("./PhoneScene"), {
 
 type Props = {
   initialPrice: number | null;
-  iphone: CurrentIphone;
+  iphones: CurrentIphone[];
   history: HistoryPoint[];
+  checkedAt: string;
 };
 
 // Used only until the first real quote arrives, so the page never shows NaN.
 const FALLBACK_BTC = 100_000;
 
-export default function Site({ initialPrice, iphone, history }: Props) {
+export default function Site({ initialPrice, iphones, history, checkedAt }: Props) {
   const feed = useBtcPrice(initialPrice);
+  const [pick, setPick] = useState(0);
+  const iphone = iphones[pick];
   const price = feed.price ?? FALLBACK_BTC;
   const btcPer = iphone.priceUsd / price;
 
@@ -89,6 +93,17 @@ export default function Site({ initialPrice, iphone, history }: Props) {
     (up ? sfx.priceUp : sfx.priceDown)();
   }, [feed.tick, feed.lastMove]);
 
+  // Bounce the price when switching models
+  const firstPick = useRef(true);
+  useEffect(() => {
+    if (firstPick.current) {
+      firstPick.current = false;
+      return;
+    }
+    gsap.fromTo(".hero__price", { scale: 0.7, rotate: -4 }, { scale: 1, rotate: 0, duration: 0.8, ease: "elastic.out(1, 0.45)" });
+    gsap.fromTo(".hero__word", { yPercent: 100 }, { yPercent: 0, duration: 0.5, ease: "back.out(2)", stagger: 0.05 });
+  }, [pick]);
+
   const toggleSound = () => {
     const on = !sound;
     setSound(on);
@@ -128,12 +143,7 @@ export default function Site({ initialPrice, iphone, history }: Props) {
 
       <header className="nav">
         <button type="button" className="logo" onClick={tapLogo} aria-label="btc2iphone. Psst: tap five times.">
-          <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
-            <circle cx="22" cy="22" r="19" fill="#F7931A" stroke="#17140F" strokeWidth="3" />
-            <text x="22" y="30" textAnchor="middle" fontSize="22" fontWeight="800" fill="#17140F" fontFamily="var(--font-mono), monospace">
-              ₿
-            </text>
-          </svg>
+          <BtcLogo size={44} />
           <span>btc2iphone</span>
         </button>
         <nav aria-label="Main" className="nav__links">
@@ -183,6 +193,25 @@ export default function Site({ initialPrice, iphone, history }: Props) {
         <section className="hero">
           <div className="hero__copy">
             <div className="pill">The only exchange rate that matters</div>
+            <div className="picker" role="radiogroup" aria-label="Price it as">
+              {iphones.map((p, i) => (
+                <button
+                  key={p.model}
+                  type="button"
+                  role="radio"
+                  aria-checked={i === pick}
+                  className={"picker__opt" + (i === pick ? " is-on" : "")}
+                  onClick={() => {
+                    if (i === pick) return;
+                    setPick(i);
+                    sfx.whoosh();
+                  }}
+                >
+                  <span>{p.model}</span>
+                  <span className="mono picker__price">${p.priceUsd.toLocaleString("en-US")}</span>
+                </button>
+              ))}
+            </div>
             <h1 className="hero__h1">
               {headline.map((w, i) => (
                 <span key={i} className="hero__mask">
@@ -209,7 +238,16 @@ export default function Site({ initialPrice, iphone, history }: Props) {
           </div>
 
           <div className="hero__stage">
-            <PhoneScene sats={fmtSats(btcPer)} model={iphone.model} laser={laser} onTap={makeItRain} />
+            <PhoneScene
+              form={iphone.form}
+              model={iphone.model}
+              sats={fmtSats(btcPer)}
+              btcPer={btcPer.toFixed(5)}
+              btcPrice={feed.price ? fmtUsd(feed.price) : null}
+              laser={laser}
+              onTap={makeItRain}
+            />
+            <div className="stage-floor" aria-hidden="true" />
             <div className="sticker sticker--blue wobble">NOT FINANCIAL ADVICE</div>
             <div className="sticker sticker--orange wobble2">WEN iPHONE?</div>
             {laser && <div className="sticker sticker--red">LASER EYES ACTIVATED</div>}
@@ -249,8 +287,9 @@ export default function Site({ initialPrice, iphone, history }: Props) {
               : "Connecting to the price feed…"}
           </span>
           <span>
-            {iphone.model} at ${iphone.priceUsd} · checked weekly · last check {iphone.checkedAt}
+            {iphones.map((p) => `${p.model} $${p.priceUsd.toLocaleString("en-US")}`).join(" · ")}
           </span>
+          <span>iPhone prices checked weekly · last check {checkedAt}</span>
           <span>Sound {sound ? "on" : "off"} · tap the logo 5×</span>
         </div>
       </footer>

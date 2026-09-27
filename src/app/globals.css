@@ -220,6 +220,50 @@ a {
   color: var(--down);
 }
 
+/* ---------- Model picker ---------- */
+.picker {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 6px;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.picker__opt {
+  min-height: 48px;
+  padding: 6px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font: 800 17px var(--font-display), sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.picker__opt:hover {
+  background: var(--cream);
+}
+.picker__opt:active {
+  transform: scale(0.95);
+}
+.picker__opt.is-on {
+  background: var(--orange);
+}
+.picker__price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.picker__opt.is-on .picker__price {
+  color: var(--ink);
+}
+
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
@@ -288,6 +332,15 @@ a {
 .hero__stage {
   position: relative;
   min-height: 560px;
+}
+.stage-floor {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 18px;
+  height: 36px;
+  border-radius: 50%;
+  background: #d9cfbc;
 }
 .phone-scene {
   position: absolute;
@@ -798,7 +851,11 @@ input[type="range"]:focus-visible {
     gap: 0;
   }
   .hero__stage {
-    min-height: 420px;
+    min-height: 460px;
+  }
+  .picker__opt {
+    font-size: 15px;
+    padding: 6px 12px;
   }
   .btn {
     height: 56px;

@@ -1,10 +1,14 @@
 #!/usr/bin/env node
-// Weekly job: find Apple's newest base iPhone and its US starting price, and
-// update src/data/iphone.json. When a new model appears, the previous one is
-// moved into the Hall of Regret with the BTC price it had while current.
+// Weekly job: refresh the US starting price of every current iPhone in
+// src/data/iphone.json, and follow Apple's lineup:
+//   - a model page that newly appears on apple.com/iphone (higher number,
+//     or a new name like "duo") is added to `current`;
+//   - a current model that disappears from apple.com/iphone moves into the
+//     Hall of Regret with its BTC price.
 //
-// Every scrape is best effort: if anything can't be parsed, the file is left
-// untouched and the job exits 0, so a changed Apple page never breaks the site.
+// Everything is best effort: if a page can't be fetched or parsed, that part
+// is skipped and the job still exits 0, so a changed Apple page never breaks
+// the site. Review the committed diff like any other change.
 
 import { readFile, writeFile } from "node:fs/promises";
 
@@ -16,7 +20,7 @@ const JOKES = [
   "New phone, same regret.",
   "Thinner phone. Thinner stack.",
   "The camera got better. The HODLing didn’t.",
-  "Apple Intelligence. Your trading, less so.",
+  "It folds. So did your conviction.",
 ];
 
 async function text(url) {
@@ -25,25 +29,33 @@ async function text(url) {
   return res.text();
 }
 
-async function latestModelNumber() {
-  const html = await text("https://www.apple.com/iphone/");
-  const nums = [...html.matchAll(/iPhone\s+(\d{2})(?!\d)/g)].map((m) => Number(m[1])).filter((n) => n >= 15 && n < 40);
-  if (!nums.length) throw new Error("no iPhone model numbers found");
-  return Math.max(...nums);
-}
-
-function startingPrice(html) {
+export function startingPrice(html) {
   const found = [
-    ...[...html.matchAll(/From\s*\$\s?(\d{3,4}(?:,\d{3})?)(?:\.\d{2})?/g)].map((m) => m[1]),
+    ...[...html.matchAll(/From\s*\$\s?(\d{1,3}(?:,\d{3})+|\d{3,4})(?:\.\d{2})?/g)].map((m) => m[1]),
     ...[...html.matchAll(/"(?:amount|currentPrice|price)"\s*:\s*"?(\d{3,4})(?:\.\d{2})?"?/g)].map((m) => m[1]),
   ]
     .map((v) => Number(String(v).replace(/,/g, "")))
-    .filter((v) => v >= 399 && v <= 2999);
+    .filter((v) => v >= 399 && v <= 3999);
   return found.length ? Math.min(...found) : null;
 }
 
-async function priceFor(n) {
-  for (const url of [`https://www.apple.com/shop/buy-iphone/iphone-${n}`, `https://www.apple.com/iphone-${n}/`]) {
+/** Model pages linked from apple.com/iphone, e.g. iphone-18-pro, iphone-duo. */
+export function modelSlugs(html) {
+  const slugs = new Set();
+  for (const m of html.matchAll(/href="\/(iphone-(?:\d{2}(?:-pro)?|air|duo|fold|flip)[a-z0-9-]*)\/"/g)) {
+    if (!/compare|switch|accessories|trade|support|ios|why|business|education/.test(m[1])) slugs.add(m[1]);
+  }
+  return [...slugs];
+}
+
+export const nameFromSlug = (slug) =>
+  slug
+    .replace(/^iphone-/, "iPhone ")
+    .replace(/-/g, " ")
+    .replace(/\b(pro|max|plus|air|duo|fold|flip|mini)\b/g, (w) => w[0].toUpperCase() + w.slice(1));
+
+async function priceFor(slug) {
+  for (const url of [`https://www.apple.com/shop/buy-iphone/${slug}`, `https://www.apple.com/${slug}/`]) {
     try {
       const p = startingPrice(await text(url));
       if (p) return p;
@@ -63,45 +75,67 @@ async function btcUsd() {
 
 async function main() {
   const data = JSON.parse(await readFile(FILE, "utf8"));
-  const cur = data.current;
-
-  let n, usd, btc;
+  let btc, slugs;
   try {
-    n = await latestModelNumber();
-    usd = await priceFor(n);
     btc = await btcUsd();
+    slugs = modelSlugs(await text("https://www.apple.com/iphone/"));
   } catch (e) {
     console.warn("Skipping update:", String(e));
     return;
   }
-  if (!usd) {
-    console.warn(`Skipping update: no price found for iPhone ${n}`);
+  if (!slugs.length) {
+    console.warn("Skipping update: no model pages found on apple.com/iphone");
     return;
   }
 
-  const model = `iPhone ${n}`;
-  if (model !== cur.model) {
-    data.history.push({
-      year: Number(cur.since.slice(0, 4)),
-      model: cur.model,
-      btc: Number(cur.launchBtc.toPrecision(3)),
-      joke: JOKES[data.history.length % JOKES.length],
-    });
-    data.current = {
-      model,
-      priceUsd: usd,
-      launchBtc: Number((usd / btc).toPrecision(3)),
-      since: today,
-      checkedAt: today,
-    };
-    console.log(`New model: ${cur.model} → ${model} at $${usd}`);
-  } else {
-    if (usd !== cur.priceUsd) console.log(`${model}: $${cur.priceUsd} → $${usd}`);
-    data.current = { ...cur, priceUsd: usd, checkedAt: today };
+  const bySlug = new Map(data.current.map((c) => [c.slug, c]));
+  const next = [];
+
+  // Refresh or retire current models
+  for (const c of data.current) {
+    if (!slugs.includes(c.slug)) {
+      data.history.push({
+        year: Number(c.since.slice(0, 4)),
+        model: c.model,
+        btc: Number((c.launchBtc ?? c.priceUsd / btc).toPrecision(3)),
+        joke: JOKES[data.history.length % JOKES.length],
+      });
+      console.log(`Retired ${c.model} to the Hall of Regret`);
+      continue;
+    }
+    const usd = await priceFor(c.slug);
+    if (usd && usd !== c.priceUsd) console.log(`${c.model}: $${c.priceUsd} → $${usd}`);
+    next.push({ ...c, priceUsd: usd ?? c.priceUsd, launchBtc: c.launchBtc ?? Number(((usd ?? c.priceUsd) / btc).toPrecision(3)) });
   }
 
+  // Add brand-new model lines (only newer numbers, or new form factors)
+  const maxNum = Math.max(0, ...data.current.map((c) => Number(c.slug.match(/\d+/)?.[0] ?? 0)));
+  for (const slug of slugs) {
+    if (bySlug.has(slug)) continue;
+    const num = Number(slug.match(/\d+/)?.[0] ?? 0);
+    const isNewForm = !num && /duo|fold|flip/.test(slug);
+    if (!(num > maxNum || isNewForm)) continue;
+    const usd = await priceFor(slug);
+    if (!usd) continue;
+    next.push({
+      model: nameFromSlug(slug),
+      slug,
+      form: /duo|fold|flip/.test(slug) ? "foldable" : "bar",
+      priceUsd: usd,
+      since: today,
+      launchBtc: Number((usd / btc).toPrecision(3)),
+    });
+    console.log(`New model: ${nameFromSlug(slug)} at $${usd}`);
+  }
+
+  if (!next.length) {
+    console.warn("Skipping update: would leave no current models");
+    return;
+  }
+  data.current = next;
+  data.checkedAt = today;
   await writeFile(FILE, JSON.stringify(data, null, 2) + "\n");
-  console.log(`Checked ${model}: $${usd} (BTC $${btc.toFixed(0)})`);
+  console.log(`Checked ${next.length} model(s) · BTC $${btc.toFixed(0)}`);
 }
 
-main();
+if (import.meta.url === `file://${process.argv[1]}`) main();

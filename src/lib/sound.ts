@@ -74,6 +74,10 @@ export const sfx = {
     tone(370, 0.28, "sawtooth", 0.3, 0.05, 349);
     tone(349, 0.7, "sawtooth", 0.6, 0.05, 262);
   },
+  whoosh: () => {
+    tone(180, 0.25, "sine", 0, 0.12, 900);
+    tone(1200, 0.12, "triangle", 0.2, 0.06, 1600);
+  },
   zap: () => tone(1800, 0.4, "sawtooth", 0, 0.06, 90),
   blip: (i: number) => tone(300 + i * 60, 0.12, "triangle", 0, 0.12, 420 + i * 70),
   /** Throttled tick for sliders; pitch follows `level` (0..1). */

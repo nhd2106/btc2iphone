@@ -2,11 +2,9 @@
 
 import { animate, stagger, utils } from "animejs";
 import { forwardRef, useImperativeHandle, useRef } from "react";
+import { BTC_LOGO_SVG } from "./BtcLogo";
 
 export type CoinRainHandle = { rain: (count?: number) => void };
-
-const COIN_SVG =
-  '<svg viewBox="0 0 44 44" width="100%" height="100%" aria-hidden="true"><circle cx="22" cy="22" r="19" fill="#F7931A" stroke="#17140F" stroke-width="3"/><text x="22" y="30" text-anchor="middle" font-size="22" font-weight="800" fill="#17140F" font-family="JetBrains Mono, monospace">₿</text></svg>';
 
 /** Full-viewport overlay that showers bitcoins (anime.js). */
 const CoinRain = forwardRef<CoinRainHandle>(function CoinRain(_, ref) {
@@ -24,7 +22,7 @@ const CoinRain = forwardRef<CoinRainHandle>(function CoinRain(_, ref) {
         c.className = "rain-coin";
         c.style.width = c.style.height = size + "px";
         c.style.left = utils.random(0, 100) + "vw";
-        c.innerHTML = COIN_SVG;
+        c.innerHTML = BTC_LOGO_SVG;
         el.appendChild(c);
         coins.push(c);
       }
