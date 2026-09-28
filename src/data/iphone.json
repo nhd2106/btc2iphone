@@ -1,21 +1,21 @@
 {
-  "checkedAt": "2026-09-27",
+  "checkedAt": "2026-09-28",
   "current": [
     {
       "model": "iPhone 18 Pro",
       "slug": "iphone-18-pro",
       "form": "bar",
-      "priceUsd": 1199,
+      "priceUsd": 699,
       "since": "2026-09-18",
-      "launchBtc": null
+      "launchBtc": 0.00834
     },
     {
       "model": "iPhone Duo",
       "slug": "iphone-duo",
       "form": "foldable",
-      "priceUsd": 1999,
+      "priceUsd": 699,
       "since": "2026-09-09",
-      "launchBtc": null
+      "launchBtc": 0.00834
     }
   ],
   "history": [
