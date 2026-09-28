@@ -1,19 +1,28 @@
 "use client";
 
+import { animate, utils } from "animejs";
 import gsap from "gsap";
+import { Draggable } from "gsap/Draggable";
+import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
+import { InertiaPlugin } from "gsap/InertiaPlugin";
+import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CurrentIphone, HistoryPoint } from "@/data/iphone";
 import { fmtSats, fmtUsd } from "@/lib/format";
 import { loadSoundPreference, setSoundEnabled, sfx } from "@/lib/sound";
 import { useBtcPrice } from "@/lib/useBtcPrice";
-import Calculator from "./Calculator";
 import BtcLogo from "./BtcLogo";
+import Calculator from "./Calculator";
 import CoinRain, { type CoinRainHandle } from "./CoinRain";
+import Cursor from "./Cursor";
+import Loader from "./Loader";
+import Odometer from "./Odometer";
 import RegretChart from "./RegretChart";
+import Torn from "./Torn";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, Draggable, InertiaPlugin, DrawSVGPlugin, ScrambleTextPlugin);
 
 const PhoneScene = dynamic(() => import("./PhoneScene"), {
   ssr: false,
@@ -30,6 +39,34 @@ type Props = {
 // Used only until the first real quote arrives, so the page never shows NaN.
 const FALLBACK_BTC = 100_000;
 
+const STICKERS = [
+  { text: "NOT FINANCIAL ADVICE", cls: "sticker--blue", anim: "wobble" },
+  { text: "WEN iPHONE?", cls: "sticker--orange", anim: "wobble2" },
+  { text: "HODL", cls: "sticker--cream", anim: "wobble" },
+  { text: "1 SAT = 1 SAT", cls: "sticker--ink", anim: "wobble2" },
+];
+
+/** Splits text into per-letter spans (kept whole per word) for the drop-in animation. */
+function Chars({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/(\s+)/).map((word, w) =>
+        /^\s+$/.test(word) ? (
+          " "
+        ) : word ? (
+          <span key={w} className="word" aria-hidden="true">
+            {word.split("").map((c, i) => (
+              <span key={i} className="ch">
+                {c}
+              </span>
+            ))}
+          </span>
+        ) : null
+      )}
+    </>
+  );
+}
+
 export default function Site({ initialPrice, iphones, history, checkedAt }: Props) {
   const feed = useBtcPrice(initialPrice);
   const [pick, setPick] = useState(0);
@@ -37,30 +74,57 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
   const price = feed.price ?? FALLBACK_BTC;
   const btcPer = iphone.priceUsd / price;
 
+  const [introDone, setIntroDone] = useState(false);
   const [sound, setSound] = useState(true);
   const [laser, setLaser] = useState(false);
   const taps = useRef(0);
   const rain = useRef<CoinRainHandle>(null);
   const root = useRef<HTMLDivElement>(null);
+  const hero = useRef<HTMLElement>(null);
   const ticker = useRef<HTMLDivElement>(null);
+  const onIntroDone = useCallback(() => setIntroDone(true), []);
 
   useEffect(() => setSound(loadSoundPreference()), []);
 
-  // Intro + scroll reveals (GSAP)
+  // Hero entrance once the loader curtain opens
+  useEffect(() => {
+    if (!introDone) return;
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        const tl = gsap.timeline();
+        tl.from(".pill, .picker", { y: -30, opacity: 0, duration: 0.5, ease: "back.out(2)", stagger: 0.08 })
+          .from(
+            ".hero__h1 .ch",
+            {
+              yPercent: 120,
+              rotate: () => gsap.utils.random(-40, 40),
+              opacity: 0,
+              duration: 0.7,
+              ease: "back.out(2.2)",
+              stagger: 0.025,
+            },
+            0.1
+          )
+          .fromTo(".scribble path", { drawSVG: "0%" }, { drawSVG: "100%", duration: 0.7, ease: "power2.inOut" }, 0.6)
+          .from(".hero__price", { scale: 0.6, opacity: 0, duration: 0.9, ease: "elastic.out(1, 0.5)" }, 0.3)
+          .from(".hero__lede", { y: 20, opacity: 0, duration: 0.5 }, 0.6)
+          .from(".hero__cta > *", { y: 30, opacity: 0, duration: 0.6, ease: "back.out(2)", stagger: 0.1 }, 0.7)
+          .from(
+            ".sticker",
+            { scale: 0, rotate: () => gsap.utils.random(-90, 90), duration: 0.6, ease: "back.out(3)", stagger: 0.1 },
+            0.9
+          );
+      });
+    }, root);
+    return () => ctx.revert();
+  }, [introDone]);
+
+  // Scroll reveals, speed-reactive marquee, throwable stickers
   useEffect(() => {
     const ctx = gsap.context(() => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from(".hero__word", {
-          yPercent: 110,
-          rotate: 6,
-          opacity: 0,
-          duration: 0.8,
-          ease: "back.out(1.6)",
-          stagger: 0.07,
-        });
-        gsap.from(".hero__price", { scale: 0.6, opacity: 0, duration: 0.9, ease: "elastic.out(1, 0.5)", delay: 0.35 });
-        gsap.from(".hero__cta > *", { y: 30, opacity: 0, duration: 0.6, ease: "back.out(2)", stagger: 0.1, delay: 0.6 });
         gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
           gsap.from(el, {
             y: 60,
@@ -70,12 +134,40 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
             scrollTrigger: { trigger: el, start: "top 85%" },
           });
         });
-        gsap.to(".marquee__track", {
-          xPercent: -50,
-          duration: 26,
-          ease: "none",
-          repeat: -1,
+
+        const loop = gsap.to(".marquee__track", { xPercent: -50, duration: 26, ease: "none", repeat: -1 });
+        loop.totalTime(26 * 50); // room to run backwards
+        const skew = gsap.quickTo(".marquee__track", "skewX", { duration: 0.4, ease: "power3" });
+        ScrollTrigger.create({
+          onUpdate: (self) => {
+            const v = self.getVelocity();
+            gsap.to(loop, {
+              timeScale: self.direction * (1 + Math.min(Math.abs(v) / 250, 8)),
+              duration: 0.15,
+              overwrite: true,
+              onComplete: () => void gsap.to(loop, { timeScale: self.direction, duration: 1.2, ease: "power2.out" }),
+            });
+            skew(gsap.utils.clamp(-14, 14, -v / 180));
+            gsap.delayedCall(0.15, () => skew(0));
+          },
         });
+      });
+
+      Draggable.create(".sticker", {
+        type: "x,y",
+        inertia: true,
+        bounds: hero.current,
+        edgeResistance: 0.6,
+        onPress(this: Draggable) {
+          sfx.pop();
+          gsap.to(this.target, { scale: 1.12, duration: 0.2, ease: "back.out(3)" });
+        },
+        onRelease(this: Draggable) {
+          gsap.to(this.target, { scale: 1, duration: 0.4, ease: "elastic.out(1, 0.4)" });
+        },
+        onThrowComplete() {
+          sfx.clack(0.8);
+        },
       });
     }, root);
     return () => ctx.revert();
@@ -93,15 +185,26 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
     (up ? sfx.priceUp : sfx.priceDown)();
   }, [feed.tick, feed.lastMove]);
 
-  // Bounce the price when switching models
+  // Model switch: letters re-drop, scribble redraws, price bounces
   const firstPick = useRef(true);
   useEffect(() => {
     if (firstPick.current) {
       firstPick.current = false;
       return;
     }
-    gsap.fromTo(".hero__price", { scale: 0.7, rotate: -4 }, { scale: 1, rotate: 0, duration: 0.8, ease: "elastic.out(1, 0.45)" });
-    gsap.fromTo(".hero__word", { yPercent: 100 }, { yPercent: 0, duration: 0.5, ease: "back.out(2)", stagger: 0.05 });
+    const ctx = gsap.context(() => {
+      gsap.from(".hero__h1 .hl .ch", {
+        yPercent: -140,
+        rotate: () => gsap.utils.random(-60, 60),
+        opacity: 0,
+        duration: 0.6,
+        ease: "bounce.out",
+        stagger: 0.03,
+      });
+      gsap.fromTo(".scribble path", { drawSVG: "0%" }, { drawSVG: "100%", duration: 0.6, delay: 0.3, ease: "power2.inOut" });
+      gsap.fromTo(".hero__price", { scale: 0.7, rotate: -4 }, { scale: 1, rotate: 0, duration: 0.8, ease: "elastic.out(1, 0.45)" });
+    }, root);
+    return () => ctx.revert();
   }, [pick]);
 
   const toggleSound = () => {
@@ -127,32 +230,63 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
     }
   };
 
+  const scramble = (e: React.MouseEvent<HTMLAnchorElement>, text: string) => {
+    gsap.to(e.currentTarget.querySelector("span"), {
+      duration: 0.5,
+      scrambleText: { text, chars: "₿$01", speed: 0.8 },
+      overwrite: true,
+    });
+  };
+
+  const xylo = (e: React.PointerEvent<HTMLSpanElement>, i: number) => {
+    animate(e.currentTarget, {
+      translateY: [
+        { to: -48, duration: 160, ease: "outQuad" },
+        { to: 0, duration: 700, ease: "outBounce" },
+      ],
+      rotate: [
+        { to: utils.random(-18, 18), duration: 160 },
+        { to: 0, duration: 700 },
+      ],
+      scale: [
+        { to: 1.15, duration: 160 },
+        { to: 1, duration: 500 },
+      ],
+    });
+    sfx.note(i);
+  };
+
   const change = feed.change24h;
   const statusLabel = feed.status === "live" ? "LIVE" : feed.status === "polling" ? "SYNC" : "…";
-  const headline = `One ${iphone.model} costs`.split(" ");
   const marquee = [
     `1 ${iphone.model.toUpperCase()} = ${btcPer.toFixed(5)} BTC`,
     `1 BTC = ${(price / iphone.priceUsd).toFixed(1)} iPHONES`,
     "STAY HUMBLE, STACK SATS",
     "HODL YOUR PHONE, TOO",
   ];
+  const btcPerStr = btcPer.toFixed(5);
 
   return (
     <div ref={root}>
+      <Loader onDone={onIntroDone} />
+      <Cursor />
       <CoinRain ref={rain} />
+      <div className="grain" aria-hidden="true" />
 
       <header className="nav">
-        <button type="button" className="logo" onClick={tapLogo} aria-label="btc2iphone. Psst: tap five times.">
+        <button type="button" className="logo" onClick={tapLogo} aria-label="btc2iphone. Psst: tap five times." data-cursor="Tap ×5">
           <BtcLogo size={44} />
           <span>btc2iphone</span>
         </button>
         <nav aria-label="Main" className="nav__links">
-          <a href="#calc" onClick={sfx.pop}>
-            Stack calculator
-          </a>
-          <a href="#regret" onClick={sfx.pop}>
-            Hall of Regret
-          </a>
+          {[
+            ["#calc", "Stack calculator"],
+            ["#regret", "Hall of Regret"],
+          ].map(([href, label]) => (
+            <a key={href} href={href} onClick={sfx.pop} onMouseEnter={(e) => scramble(e, label)} aria-label={label}>
+              <span aria-hidden="true">{label}</span>
+            </a>
+          ))}
         </nav>
         <div className="nav__right">
           <div ref={ticker} className="ticker mono" aria-live="polite">
@@ -171,6 +305,8 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
             onClick={toggleSound}
             aria-pressed={sound}
             aria-label={sound ? "Mute sound effects" : "Turn on sound effects"}
+            data-magnetic
+            data-cursor={sound ? "Mute" : "Sound"}
           >
             {sound ? (
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -190,7 +326,7 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
       </header>
 
       <main>
-        <section className="hero">
+        <section ref={hero} className="hero">
           <div className="hero__copy">
             <div className="pill">The only exchange rate that matters</div>
             <div className="picker" role="radiogroup" aria-label="Price it as">
@@ -201,6 +337,7 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
                   role="radio"
                   aria-checked={i === pick}
                   className={"picker__opt" + (i === pick ? " is-on" : "")}
+                  data-cursor="Switch"
                   onClick={() => {
                     if (i === pick) return;
                     setPick(i);
@@ -212,15 +349,18 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
                 </button>
               ))}
             </div>
-            <h1 className="hero__h1">
-              {headline.map((w, i) => (
-                <span key={i} className="hero__mask">
-                  <span className="hero__word">{w}</span>
-                </span>
-              ))}
+            <h1 className="hero__h1" aria-label={`One ${iphone.model} costs`}>
+              <Chars text="One " />
+              <span className="hl" key={iphone.model}>
+                <Chars text={iphone.model} />
+                <svg className="scribble" viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden="true">
+                  <path d="M4 16 C 40 6, 80 22, 120 12 S 200 4, 240 14 S 290 10, 296 8" />
+                </svg>
+              </span>
+              <Chars text=" costs" />
             </h1>
             <div className="hero__price">
-              <span className="mono hero__num">{btcPer.toFixed(5)}</span>
+              <Odometer className="mono hero__num" value={introDone ? btcPerStr : btcPerStr.replace(/\d/g, "0")} />
               <span className="hero__btc">BTC</span>
             </div>
             <p className="hero__lede">
@@ -228,30 +368,38 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
               it, <em>&ldquo;the phone I bought instead of retiring.&rdquo;</em>
             </p>
             <div className="hero__cta">
-              <button type="button" className="btn btn--orange chunky" onClick={makeItRain}>
+              <button type="button" className="btn btn--orange chunky" onClick={makeItRain} data-magnetic data-cursor="Rain!">
                 Make it rain sats
               </button>
-              <a href="#regret" className="btn chunky" onClick={sfx.pop}>
+              <a href="#regret" className="btn chunky" onClick={sfx.pop} data-magnetic data-cursor="Cry">
                 Show me the regret
               </a>
             </div>
           </div>
 
-          <div className="hero__stage">
+          <div className="hero__stage" data-cursor={iphone.form === "foldable" ? "Fold" : "Spin"}>
             <PhoneScene
               form={iphone.form}
               model={iphone.model}
               sats={fmtSats(btcPer)}
-              btcPer={btcPer.toFixed(5)}
+              btcPer={btcPerStr}
               btcPrice={feed.price ? fmtUsd(feed.price) : null}
               laser={laser}
               onTap={makeItRain}
             />
             <div className="stage-floor" aria-hidden="true" />
-            <div className="sticker sticker--blue wobble">NOT FINANCIAL ADVICE</div>
-            <div className="sticker sticker--orange wobble2">WEN iPHONE?</div>
-            {laser && <div className="sticker sticker--red">LASER EYES ACTIVATED</div>}
           </div>
+
+          {STICKERS.map((s, i) => (
+            <div key={s.text} className={`sticker sticker--${i} ${s.cls}`} data-cursor="Throw">
+              <span className={s.anim}>{s.text}</span>
+            </div>
+          ))}
+          {laser && (
+            <div className="sticker sticker--red">
+              <span>LASER EYES ACTIVATED</span>
+            </div>
+          )}
         </section>
 
         <div className="marquee" aria-hidden="true">
@@ -267,14 +415,21 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
           </div>
         </div>
 
-        <Calculator price={price} iphonePrice={iphone.priceUsd} />
+        <Calculator price={price} iphonePrice={iphone.priceUsd} model={iphone.model} />
 
         <RegretChart history={history} model={iphone.model} price={price} iphonePrice={iphone.priceUsd} />
       </main>
 
       <footer className="footer">
+        <Torn />
         <div>
-          <p className="footer__mark">btc2iphone</p>
+          <p className="footer__mark" aria-label="btc2iphone" data-cursor="Play me">
+            {"btc2iphone".split("").map((c, i) => (
+              <span key={i} className="xylo" aria-hidden="true" onPointerEnter={(e) => xylo(e, i)}>
+                {c}
+              </span>
+            ))}
+          </p>
           <p className="footer__small">Not financial advice. Definitely not phone advice.</p>
         </div>
         <div className="mono footer__meta">
@@ -286,9 +441,7 @@ export default function Site({ initialPrice, iphones, history, checkedAt }: Prop
               ? "BTC price refreshes every 30s"
               : "Connecting to the price feed…"}
           </span>
-          <span>
-            {iphones.map((p) => `${p.model} $${p.priceUsd.toLocaleString("en-US")}`).join(" · ")}
-          </span>
+          <span>{iphones.map((p) => `${p.model} $${p.priceUsd.toLocaleString("en-US")}`).join(" · ")}</span>
           <span>iPhone prices checked weekly · last check {checkedAt}</span>
           <span>Sound {sound ? "on" : "off"} · tap the logo 5×</span>
         </div>

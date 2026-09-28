@@ -33,8 +33,10 @@ Open [http://localhost:3000](http://localhost:3000).
 | Where | Library |
 | --- | --- |
 | Realistic 3D iPhone 18 Pro and foldable iPhone Duo in the site's colours, with a live lock screen, pointer tilt, tap to spin and fold, and a Bitcoin coin (`PhoneScene.tsx`) | three.js |
-| Headline intro, scroll reveals, marquee, chart line draw, rolling numbers, ticker flash | GSAP + ScrollTrigger |
-| Coin rain, phone icons popping into the calculator | anime.js |
+| "Mining" intro loader, letter-by-letter headline, scribble underline, scroll reveals, pinned Hall of Regret scrubbed by scroll, speed-reactive marquee, throwable stickers, scrambled nav links, rolling numbers | GSAP (ScrollTrigger, SplitText-style chars, DrawSVG, ScrambleText, Draggable + Inertia) |
+| Coin rain, phones popping into the calculator, the xylophone footer logo | anime.js |
+| Escaped phones that pile up and can be grabbed, flung and shaken (`PhonePit.tsx`, loaded on demand) | Matter.js |
+| Coin cursor with context labels and magnetic buttons (fine pointers only), slot-machine price, film grain, torn-paper edges, shareable brag card (`src/lib/brag.ts`) | CSS + canvas |
 | Every sound effect (`src/lib/sound.ts`), synthesized with no audio files | Web Audio API |
 
 All motion respects `prefers-reduced-motion`, and sound can be muted from the
