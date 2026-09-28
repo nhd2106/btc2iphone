@@ -29,15 +29,30 @@ async function text(url) {
   return res.text();
 }
 
-export function startingPrice(html) {
-  const found = [
-    ...[...html.matchAll(/From\s*\$\s?(\d{1,3}(?:,\d{3})+|\d{3,4})(?:\.\d{2})?/g)].map((m) => m[1]),
-    ...[...html.matchAll(/"(?:amount|currentPrice|price)"\s*:\s*"?(\d{3,4})(?:\.\d{2})?"?/g)].map((m) => m[1]),
-  ]
-    .map((v) => Number(String(v).replace(/,/g, "")))
-    .filter((v) => v >= 399 && v <= 3999);
-  return found.length ? Math.min(...found) : null;
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * The "From $X" price shown right after the model's own name. Apple pages
+ * also advertise cheaper models and trade-in offers, so a price anywhere
+ * else on the page is ignored. Returns the most common match, or null.
+ */
+export function startingPrice(html, model) {
+  const text = html.replace(/<[^>]+>/g, " ").replace(/&nbsp;|\s+/g, " ");
+  const counts = new Map();
+  for (const m of text.matchAll(new RegExp(escapeRe(model) + "(?! ?(?:Max|Plus|mini)\\b)", "gi"))) {
+    const near = text.slice(m.index, m.index + 300);
+    const hit = near.match(/From \$ ?(\d{1,3}(?:,\d{3})+|\d{3,4})(?:\.\d{2})?/);
+    if (!hit) continue;
+    const v = Number(hit[1].replace(/,/g, ""));
+    if (v >= 399 && v <= 3999) counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  let best = null;
+  for (const [v, n] of counts) if (!best || n > best[1]) best = [v, n];
+  return best ? best[0] : null;
 }
+
+/** Biggest believable weekly change; anything larger is treated as a misread. */
+const MAX_CHANGE = 0.25;
 
 /** Model pages linked from apple.com/iphone, e.g. iphone-18-pro, iphone-duo. */
 export function modelSlugs(html) {
@@ -54,16 +69,26 @@ export const nameFromSlug = (slug) =>
     .replace(/-/g, " ")
     .replace(/\b(pro|max|plus|air|duo|fold|flip|mini)\b/g, (w) => w[0].toUpperCase() + w.slice(1));
 
-async function priceFor(slug) {
-  for (const url of [`https://www.apple.com/shop/buy-iphone/${slug}`, `https://www.apple.com/${slug}/`]) {
+async function priceFor(slug, model) {
+  for (const url of [`https://www.apple.com/${slug}/`, `https://www.apple.com/shop/buy-iphone/${slug}`]) {
     try {
-      const p = startingPrice(await text(url));
+      const p = startingPrice(await text(url), model);
       if (p) return p;
     } catch (e) {
       console.warn(String(e));
     }
   }
   return null;
+}
+
+/** True only when Apple's page for the model is really gone (404/410). */
+async function pageGone(slug) {
+  try {
+    const res = await fetch(`https://www.apple.com/${slug}/`, { headers: UA, signal: AbortSignal.timeout(15000) });
+    return res.status === 404 || res.status === 410;
+  } catch {
+    return false;
+  }
 }
 
 async function btcUsd() {
@@ -93,7 +118,7 @@ async function main() {
 
   // Refresh or retire current models
   for (const c of data.current) {
-    if (!slugs.includes(c.slug)) {
+    if (!slugs.includes(c.slug) && (await pageGone(c.slug))) {
       data.history.push({
         year: Number(c.since.slice(0, 4)),
         model: c.model,
@@ -103,9 +128,14 @@ async function main() {
       console.log(`Retired ${c.model} to the Hall of Regret`);
       continue;
     }
-    const usd = await priceFor(c.slug);
+    let usd = await priceFor(c.slug, c.model);
+    if (usd && Math.abs(usd - c.priceUsd) / c.priceUsd > MAX_CHANGE) {
+      console.warn(`::warning::${c.model}: read $${usd} but have $${c.priceUsd}; change too big, keeping $${c.priceUsd}`);
+      usd = null;
+    }
     if (usd && usd !== c.priceUsd) console.log(`${c.model}: $${c.priceUsd} → $${usd}`);
-    next.push({ ...c, priceUsd: usd ?? c.priceUsd, launchBtc: c.launchBtc ?? Number(((usd ?? c.priceUsd) / btc).toPrecision(3)) });
+    const priceUsd = usd ?? c.priceUsd;
+    next.push({ ...c, priceUsd, launchBtc: c.launchBtc ?? Number((priceUsd / btc).toPrecision(3)) });
   }
 
   // Add brand-new model lines (only newer numbers, or new form factors)
@@ -115,7 +145,8 @@ async function main() {
     const num = Number(slug.match(/\d+/)?.[0] ?? 0);
     const isNewForm = !num && /duo|fold|flip/.test(slug);
     if (!(num > maxNum || isNewForm)) continue;
-    const usd = await priceFor(slug);
+    const name = nameFromSlug(slug);
+    const usd = await priceFor(slug, name);
     if (!usd) continue;
     next.push({
       model: nameFromSlug(slug),

@@ -5,17 +5,17 @@
       "model": "iPhone 18 Pro",
       "slug": "iphone-18-pro",
       "form": "bar",
-      "priceUsd": 699,
+      "priceUsd": 1199,
       "since": "2026-09-18",
-      "launchBtc": 0.00834
+      "launchBtc": 0.0143
     },
     {
       "model": "iPhone Duo",
       "slug": "iphone-duo",
       "form": "foldable",
-      "priceUsd": 699,
+      "priceUsd": 1999,
       "since": "2026-09-09",
-      "launchBtc": 0.00834
+      "launchBtc": 0.0239
     }
   ],
   "history": [
